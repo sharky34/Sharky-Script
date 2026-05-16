@@ -6,9 +6,9 @@
     Calls Renderer:UpdateAllESPComponents() when component toggles change.
 ]]
 
-local UserInput = game:GetService("UserInputService")
+local UserInput  = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TweenSvc  = game:GetService("TweenService")
+local TweenSvc   = game:GetService("TweenService")
 
 local GUI = {}
 
@@ -39,6 +39,11 @@ local Theme = {
 }
 
 local ActiveSliderUpdateFn = nil
+
+-- Randomised at load time so no static string is detectable
+-- across sessions or by scanning gethui()/BindToRenderStep enumerations.
+local GUI_NAME   = tostring(math.random(100000, 999999))
+local MOUSE_BIND = tostring(math.random(100000, 999999))
 
 ------------------------------------------------------------------------
 -- HELPERS
@@ -92,52 +97,35 @@ end
 
 local function MakeLabel(parent, text, size, pos, textColor, textSize, font)
     local l = Instance.new("TextLabel")
-    l.Name                  = "Label"
-    l.Parent                = parent
-    l.Size                  = size or UDim2.new(1,0,0,20)
-    l.Position              = pos  or UDim2.new(0,0,0,0)
+    l.Name                   = "Label"
+    l.Parent                 = parent
+    l.Size                   = size or UDim2.new(1,0,0,20)
+    l.Position               = pos  or UDim2.new(0,0,0,0)
     l.BackgroundTransparency = 1
-    l.Text                  = text or ""
-    l.TextColor3            = textColor or Theme.Text
-    l.Font                  = font      or Enum.Font.GothamSemibold
-    l.TextSize              = textSize  or 13
-    l.TextXAlignment        = Enum.TextXAlignment.Left
-    l.TextYAlignment        = Enum.TextYAlignment.Center
+    l.Text                   = text or ""
+    l.TextColor3             = textColor or Theme.Text
+    l.Font                   = font      or Enum.Font.GothamSemibold
+    l.TextSize               = textSize  or 13
+    l.TextXAlignment         = Enum.TextXAlignment.Left
+    l.TextYAlignment         = Enum.TextYAlignment.Center
     return l
 end
 
 local function MakeScrollFrame(parent, size, pos)
     local sf = Instance.new("ScrollingFrame")
-    sf.Name                 = "Scroll"
-    sf.Parent               = parent
-    sf.Size                 = size or UDim2.new(1,0,1,0)
-    sf.Position             = pos  or UDim2.new(0,0,0,0)
+    sf.Name                  = "Scroll"
+    sf.Parent                = parent
+    sf.Size                  = size or UDim2.new(1,0,1,0)
+    sf.Position              = pos  or UDim2.new(0,0,0,0)
     sf.BackgroundTransparency = 1
-    sf.BorderSizePixel      = 0
-    sf.ScrollBarThickness   = 3
-    sf.ScrollBarImageColor3 = Theme.Accent
-    sf.CanvasSize           = UDim2.new(0,0,0,0)
-    sf.AutomaticCanvasSize  = Enum.AutomaticSize.Y
-    sf.ClipsDescendants     = true
-    sf.ScrollingDirection   = Enum.ScrollingDirection.Y
+    sf.BorderSizePixel       = 0
+    sf.ScrollBarThickness    = 3
+    sf.ScrollBarImageColor3  = Theme.Accent
+    sf.CanvasSize            = UDim2.new(0,0,0,0)
+    sf.AutomaticCanvasSize   = Enum.AutomaticSize.Y
+    sf.ClipsDescendants      = true
+    sf.ScrollingDirection    = Enum.ScrollingDirection.Y
     return sf
-end
-
-local function MakeTextInput(parent, placeholder, size, pos)
-    local box = Instance.new("TextBox")
-    box.Parent               = parent
-    box.Size                 = size or UDim2.new(1,0,1,0)
-    box.Position             = pos  or UDim2.new(0,0,0,0)
-    box.BackgroundTransparency = 1
-    box.Text                 = ""
-    box.PlaceholderText      = placeholder or ""
-    box.TextColor3           = Theme.Text
-    box.PlaceholderColor3    = Theme.TextMuted
-    box.Font                 = Enum.Font.Gotham
-    box.TextSize             = 13
-    box.TextXAlignment       = Enum.TextXAlignment.Left
-    box.ClearTextOnFocus     = false
-    return box
 end
 
 local function CreateSectionHeader(parent, text)
@@ -155,8 +143,8 @@ local function CreatePage(parent, title)
     page.Visible = false
     local scroll = MakeScrollFrame(page)
     local inner  = MakeFrame(scroll, UDim2.new(1,0,0,0), nil, Color3.fromRGB(0,0,0,0))
-    inner.Name                  = "Inner"
-    inner.AutomaticSize         = Enum.AutomaticSize.Y
+    inner.Name                   = "Inner"
+    inner.AutomaticSize          = Enum.AutomaticSize.Y
     inner.BackgroundTransparency = 1
     MakePadding(inner, 4, 4, 12, 4)
     MakeListLayout(inner, 6)
@@ -182,8 +170,8 @@ local function CreateToggle(parent, labelText, initial, callback)
     local function Refresh(v, animate)
         state = v
         local kx = v and 0.5  or 0
-        local pc = v and Theme.Accent    or Theme.SurfaceAlt
-        local kc = v and Theme.White     or Theme.TextMuted
+        local pc = v and Theme.Accent   or Theme.SurfaceAlt
+        local kc = v and Theme.White    or Theme.TextMuted
         if animate then
             TweenSvc:Create(knob, TweenInfo.new(0.15), {Position=UDim2.new(kx,3,0.5,-8), BackgroundColor3=kc}):Play()
             TweenSvc:Create(pill, TweenInfo.new(0.15), {BackgroundColor3=pc}):Play()
@@ -229,9 +217,9 @@ local function CreateSlider(parent, labelText, minVal, maxVal, step, initVal, ca
         v = math.clamp(v, minVal, maxVal)
         v = math.floor(v/step + 0.5) * step
         local frac = (v - minVal) / math.max(maxVal - minVal, 1)
-        fill.Size          = UDim2.new(frac, 0, 1, 0)
-        handle.Position    = UDim2.new(frac, -6, 0.5, -6)
-        valLabel.Text      = tostring(v)
+        fill.Size       = UDim2.new(frac, 0, 1, 0)
+        handle.Position = UDim2.new(frac, -6, 0.5, -6)
+        valLabel.Text   = tostring(v)
         callback(v)
     end
 
@@ -290,16 +278,16 @@ local function CreateDropdown(parent, labelText, options, selected, callback)
 
     for i, opt in ipairs(options) do
         local item = Instance.new("TextButton")
-        item.Name                  = opt
-        item.Parent                = panel
-        item.Size                  = UDim2.new(1,0,0,ITEM_H)
-        item.Position              = UDim2.new(0,0,0,(i-1)*ITEM_H)
+        item.Name                   = opt
+        item.Parent                 = panel
+        item.Size                   = UDim2.new(1,0,0,ITEM_H)
+        item.Position               = UDim2.new(0,0,0,(i-1)*ITEM_H)
         item.BackgroundTransparency = 1
-        item.Text                  = opt
-        item.TextColor3            = (opt == selected) and Theme.Accent or Theme.Text
-        item.Font                  = Enum.Font.GothamSemibold
-        item.TextSize              = 13
-        item.ZIndex                = 11
+        item.Text                   = opt
+        item.TextColor3             = (opt == selected) and Theme.Accent or Theme.Text
+        item.Font                   = Enum.Font.GothamSemibold
+        item.TextSize               = 13
+        item.ZIndex                 = 11
         MakeCorner(item, 4)
         item.MouseEnter:Connect(function()
             item.BackgroundTransparency = 0
@@ -347,19 +335,16 @@ end
 -- INIT
 ------------------------------------------------------------------------
 function GUI:Init(Core, Renderer)
-    self.Core     = Core
-    self.Renderer = Renderer
-    self.ScreenGui    = nil
-    self.Pages        = {}
-    self.TabButtons   = {}
-    self.CurrentTab   = "General"
-    self.Connections  = {}
+    self.Core            = Core
+    self.Renderer        = Renderer
+    self.ScreenGui       = nil
+    self.Pages           = {}
+    self.TabButtons      = {}
+    self.CurrentTab      = "General"
+    self.Connections     = {}
     self.ActiveIndicator = nil
-
     self:Build()
 end
-
-local MOUSE_BIND = "ESPMouseOverride"
 
 function GUI:TrackConn(conn)
     table.insert(self.Connections, conn); return conn
@@ -372,13 +357,13 @@ function GUI:Build()
     local Renderer = self.Renderer
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name           = "ESPMenu"
+    screenGui.Name           = GUI_NAME   -- randomised, not a static known string
     screenGui.ResetOnSpawn   = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent         = gethui()
     self.ScreenGui = screenGui
 
-    -- Shared slider drag listener
+    -- Shared slider drag listener stored on Core.Connections for clean Shutdown
     if not self.Core.Connections.SliderDrag then
         self.Core.Connections.SliderDrag = UserInput.InputChanged:Connect(function(input)
             if ActiveSliderUpdateFn and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -432,6 +417,7 @@ function GUI:Build()
     -- BindToRenderStep at Camera+1 ensures the override runs after the
     -- game camera re-locks the cursor, keeping the GUI usable regardless
     -- of the game's MouseBehavior setting.
+    -- MOUSE_BIND is randomised at load time so the bind name is not static.
     --------------------------------------------------------------------
     local savedMouseBehavior, savedMouseIconEnabled
 
@@ -470,12 +456,13 @@ function GUI:Build()
     end
     self:TrackConn(titleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging=true; dragStart=input.Position
-            dragStartPos=Vector2.new(root.AbsolutePosition.X, root.AbsolutePosition.Y)
+            dragging     = true
+            dragStart    = input.Position
+            dragStartPos = Vector2.new(root.AbsolutePosition.X, root.AbsolutePosition.Y)
         end
     end))
     self:TrackConn(titleBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging=false end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end))
     self:TrackConn(UserInput.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -495,7 +482,7 @@ function GUI:Build()
     --------------------------------------------------------------------
     -- Body layout
     --------------------------------------------------------------------
-    local body = MakeFrame(root, UDim2.new(1,0,1,-44), UDim2.new(0,0,0,44), Theme.BG, "Body")
+    local body    = MakeFrame(root, UDim2.new(1,0,1,-44), UDim2.new(0,0,0,44), Theme.BG, "Body")
     local SIDE_W  = 128
     local sidebar = MakeFrame(body, UDim2.new(0,SIDE_W,1,0), nil, Theme.Sidebar, "Sidebar")
     local edge    = MakeFrame(body, UDim2.new(0,1,1,0), UDim2.new(0,SIDE_W,0,0), Theme.Border)
@@ -561,7 +548,7 @@ function GUI:Build()
         MakeCorner(btn, 6)
         local icon = MakeLabel(btn, def.icon, UDim2.new(0,24,1,0), UDim2.new(0,6,0,0), Theme.TextSub, 14)
         icon.Name = "Icon"
-        local lbl = MakeLabel(btn, def.name, UDim2.new(1,-34,1,0), UDim2.new(0,30,0,0), Theme.TextSub, 12)
+        local lbl  = MakeLabel(btn, def.name, UDim2.new(1,-34,1,0), UDim2.new(0,30,0,0), Theme.TextSub, 12)
         lbl.Name = "Label"
         btn.MouseEnter:Connect(function()
             if self.CurrentTab ~= def.name then
@@ -576,8 +563,8 @@ function GUI:Build()
         btn.MouseButton1Click:Connect(function() SelectTab(def.name) end)
         self.TabButtons[def.name] = btn
         local pf, inner = CreatePage(contentArea, def.name)
-        pages[def.name]       = pf
-        self.Pages[def.name]  = {frame=pf, inner=inner}
+        pages[def.name]      = pf
+        self.Pages[def.name] = {frame=pf, inner=inner}
     end
 
     local function Tab(name) return self.Pages[name].inner end
